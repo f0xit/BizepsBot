@@ -4,7 +4,7 @@ import random
 import discord
 from discord.ext import commands
 
-from Main import _is_banned, _read_json, _write_json, logging
+from Main import _read_json, _write_json, logging
 
 
 def _refresh_hanstasks():
@@ -19,17 +19,6 @@ class HansTaskList(commands.Cog):
         self.bot = bot
         self.HansTasks = _refresh_hanstasks()
 
-    # Async for cog_check, normal for command_check
-    async def cog_check(self, ctx):
-        return await _is_banned(ctx)
-
-    # Events
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        pass
-
-    # Commands
     @commands.slash_command(name="hans", description="Er hat zu tun!", brief="Er hat zu tun!")
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def _hanstasks(

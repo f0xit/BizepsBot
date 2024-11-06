@@ -1,12 +1,11 @@
 import os
 import random
-from typing import Tuple
 
 import aiohttp
 import discord
 from discord.ext import commands
 
-from Main import _is_banned, datetime, logging
+from Main import datetime, logging
 
 MAX_DISCORD_FILE_SIZE = 8_000_000
 
@@ -27,9 +26,6 @@ class Memes(commands.Cog):
 
         self.RefreshMemes()
 
-    async def cog_check(self, ctx):
-        return await _is_banned(ctx)
-
     def RefreshMemes(self):
         # Easiest way to walk was with a replace
         for MemeFolder, _, Files in os.walk(os.getcwd() + "/memes/"):
@@ -43,7 +39,7 @@ class Memes(commands.Cog):
         random.shuffle(self.Mittwoch)
         logging.info("Refreshed Memelist.")
 
-    async def GetMeme(self, *, Mittwoch: bool = False) -> Tuple[str, str]:
+    async def GetMeme(self, *, Mittwoch: bool = False) -> tuple[str, str]:
         ListOfMemes = self.Memes if not Mittwoch else self.Mittwoch
 
         RandomMeme = ListOfMemes.pop()
@@ -122,11 +118,6 @@ class Memes(commands.Cog):
                         random.shuffle(ListOfMemes)
 
                         logging.info(f"[{ctx.author}] added Meme {FilePath} to the Gallery.")
-
-    # Events
-    @commands.Cog.listener()
-    async def on_ready(self):
-        pass
 
     @commands.slash_command(name="meme", description="Gibt ein Zufallsmeme aus, kann auch Memes adden")
     @commands.cooldown(2, 180, commands.BucketType.user)

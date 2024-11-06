@@ -2,22 +2,13 @@ import random
 
 from discord.ext import commands
 
-from Main import _is_banned, _write_json, discord, logging
+from Main import _write_json, discord, logging
 
 
 class Counter(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def cog_check(self, ctx):
-        return await _is_banned(ctx)
-
-    # Events
-    @commands.Cog.listener()
-    async def on_ready(self):
-        pass
-
-    # Functions
     async def _inc_counter(self, invoker: discord.ApplicationContext, name: str, incnum: int):
         self.bot.Settings["Settings"]["Counter"][f"{name.title()}"] = self.bot.Settings["Settings"]["Counter"][f"{name.title()}"] + incnum
         LastAboNumber = self.bot.Settings["Settings"]["Counter"]["LastAboAt"]
@@ -126,13 +117,6 @@ class Counter(commands.Cog):
             await Counter._show_counter(self, ctx, "Luck")
         else:
             await Counter._inc_counter(self, ctx, "Luck", 1)
-
-    # @_counter.error
-    # async def _counter_error(self, ctx, error):
-    #     if isinstance(error, commands.CommandOnCooldown):
-    #         await ctx.send("Dieser Befehl ist noch im Cooldown.")
-    #         logging.warning(
-    #             f"{ctx.author} wanted to raise a counter fast!")
 
 
 def setup(bot):

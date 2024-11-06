@@ -6,7 +6,7 @@ import discord
 import uwuify
 from discord.ext import commands
 
-from Main import _get_banned_users, _is_banned, logging
+from Main import logging
 
 
 # Checks
@@ -21,15 +21,6 @@ def _is_nouwuchannel(ctx):
 class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.BannedUsers = _get_banned_users()
-
-    async def cog_check(self, ctx):
-        return await _is_banned(ctx)
-
-    # Events
-    @commands.Cog.listener()
-    async def on_ready(self):
-        pass
 
     async def get_waifu_img(self) -> dict[str, str | list] | None:
         waifurl = "https://api.waifu.im/search"
@@ -211,7 +202,6 @@ class Fun(commands.Cog):
         if isinstance(error, commands.CommandOnCooldown):
             await ctx.respond(f"Dieser Befehl ist noch im Cooldown. Versuch es in {int(error.retry_after)} Sekunden nochmal.", ephemeral=True)
             logging.warning(f"{ctx.author} wanted to spam the Schnabicommand!")
-
 
 def setup(bot):
     bot.add_cog(Fun(bot))
