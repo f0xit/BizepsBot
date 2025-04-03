@@ -28,7 +28,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True  # Needed for DM function on alerts
 # Remember to remove the debug guild if you want to use it on your server
-bot = commands.Bot(debug_guilds=[539546796473712650], command_prefix=("!"), intents=intents)
+bot = commands.Bot(debug_guilds=[337227463564328970], command_prefix=("!"), intents=intents)
 
 ### Functions ###
 
@@ -602,7 +602,7 @@ if __name__ == "__main__":
     ### Add Cogs in bot file ###
 
     for File in os.listdir("./cogs"):
-        if File.endswith(".py") and f"cogs.{File[:-3]}" not in bot.extensions and not File.startswith("management") and not File.startswith("old"):
+        if File.endswith(".py") and f"cogs.{File[:-3]}" not in bot.extensions and not File.startswith("management") and not File.endswith("__.py"):
             bot.load_extension(f"cogs.{File[:-3]}")
             logging.info(f"Extension {File[:-3]} loaded.")
     if "cogs.management" not in bot.extensions:
