@@ -8,7 +8,6 @@ from datetime import timedelta, timezone
 
 import aiohttp
 import discord
-import pandas as pd
 import requests
 import zoneinfo
 from bs4 import BeautifulSoup
@@ -243,40 +242,6 @@ async def GameReminder():
         for reminder in FoundList:
             bot.Settings["Settings"]["Groups"].pop(f"{reminder}")
         _write_json("Settings.json", bot.Settings)
-
-
-@tasks.loop(time=datetime.time(hour=17, minute=0, second=0, tzinfo=zoneinfo.ZoneInfo("Europe/Berlin")))
-async def TrashReminder():
-    """
-    Prüft einmal um 17 Uhr ob morgen Müll ist und sendet eine Nachricht an mich per Discord DM,
-    dabei wird eine CSV Datei eingelesen und durchiteriert.
-    """
-    AdminToNotify = 248181624485838849
-    MyDiscordUser = await bot.fetch_user(AdminToNotify)
-    tomorrowNow = datetime.datetime.today() + timedelta(days=1)
-    tomorrowClean = tomorrowNow.replace(hour=00, minute=00, second=00, microsecond=00)
-    # categorial DFs reduce memory usage
-    MuellListe = pd.read_csv("Muell.csv", sep=";", dtype="category")
-    for entry in MuellListe["Schwarze Tonne"].dropna():
-        EntryDate = pd.to_datetime(entry[3:], dayfirst=True)
-        if tomorrowClean == EntryDate:
-            await MyDiscordUser.send(f"Die nächste schwarze Tonne ist morgen am: {entry}")
-            logging.info(f"Reminder for black garbage can which is collected on {entry} sent!")
-            break
-
-    for entry in MuellListe["Blaue Tonne"].dropna():
-        EntryDate = pd.to_datetime(entry[3:], dayfirst=True)
-        if tomorrowClean == EntryDate:
-            await MyDiscordUser.send(f"Die nächste blaue Tonne ist morgen am: {entry}")
-            logging.info(f"Reminder for blue garbage can which is collected on {entry} sent!")
-            break
-
-    for entry in MuellListe["Gelbe Saecke"].dropna():
-        EntryDate = pd.to_datetime(entry[3:], dayfirst=True)
-        if tomorrowClean == EntryDate:
-            await MyDiscordUser.send(f"Die nächsten gelben Säcke sind morgen am: {entry}")
-            logging.info(f"Reminder for yellow trashbag which is collected on {entry} sent!")
-            break
 
 
 # this needs a fix discussed in https://github.com/Pycord-Development/pycord/issues/1990
