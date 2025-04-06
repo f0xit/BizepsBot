@@ -23,36 +23,16 @@ logging.basicConfig(
 # To show the whole table, currently unused
 # pd.set_option('display.max_rows', None)  # noqa: ERA001
 
+GUILD_ID = 337227463564328970
+MUCHZEPS_CHANNEL_ID = 986763851519385690
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True  # Needed for DM function on alerts
 # Remember to remove the debug guild if you want to use it on your server
-bot = commands.Bot(debug_guilds=[337227463564328970], command_prefix=("!"), intents=intents)
+bot = commands.Bot(debug_guilds=[GUILD_ID], command_prefix=("!"), intents=intents)
 
 ### Functions ###
-
-
-def RequestTwitchToken():
-    """
-    Beantragt ein neues Twitch Token zur Authentifizierung.
-    """
-    global TWITCH_TOKEN, TWITCH_TOKEN_EXPIRES
-
-    rTwitchTokenData = requests.post("https://id.twitch.tv/oauth2/token", data={"client_id": TWITCH_CLIENT_ID, "client_secret": TWITCH_CLIENT_SECRET, "grant_type": "client_credentials"}, timeout=30)
-
-    TWITCHTOKENDATA = json.loads(rTwitchTokenData.content)
-    TWITCH_TOKEN = TWITCHTOKENDATA["access_token"]
-    TWITCH_TOKEN_EXPIRES = datetime.datetime.timestamp(datetime.datetime.now()) + TWITCHTOKENDATA["expires_in"]
-
-    with open("TOKEN.json", encoding="UTF-8") as TokenJsonRead:
-        data = json.load(TokenJsonRead)
-        data["TWITCH_TOKEN"] = TWITCH_TOKEN
-        data["TWITCH_TOKEN_EXPIRES"] = TWITCH_TOKEN_EXPIRES
-    with open("TOKEN.json", "w", encoding="UTF-8") as write_file:
-        json.dump(data, write_file)
-    logging.info("New Twitch Token requested.")
-
-
 def _read_json(FileName):
     with open(f"{FileName}", "r", encoding="utf-8") as JsonRead:
         return json.load(JsonRead)
@@ -71,16 +51,12 @@ def _load_settings_file():
 
 
 ### Permission Checks ###
-
-
 def _get_banned_users():
     bot.BannedUsers = _read_json("Settings.json")["Settings"]["BannedUsers"]
     return bot.BannedUsers
 
 
 # Needs to be async for cog checks, command checks etc. work without async
-
-
 async def _is_banned(ctx: commands.context.Context):
     if str(ctx.author) in bot.BannedUsers:
         logging.info(f"User {ctx.author} wanted to use a command but is banned.")
@@ -88,163 +64,6 @@ async def _is_banned(ctx: commands.context.Context):
 
 
 ### Tasks Section ###
-
-
-@tasks.loop(seconds=60)
-async def TwitchLiveCheck():
-    """
-    Erneuert den Twitch Token, sofern abgelaufen.
-    Prüft jede Minute ob jemand bei Twitch live gegangen ist,
-    das Ganze wird in ein JSON File gespeichert, sofern der Livestatus sich geändert hat.
-    Zuletzt wird eine Benachrichtigung in meinen oder den Kumpels Channel gepostet.
-    """
-
-    if datetime.datetime.timestamp(datetime.datetime.now()) > TWITCH_TOKEN_EXPIRES:
-        RequestTwitchToken()
-
-    API_Call = io.StringIO()
-    for index, USER in enumerate(bot.Settings["Settings"]["TwitchUser"].keys()):
-        if index == 0:
-            API_Call.write(f"user_login={USER}")
-        else:
-            API_Call.write(f"&user_login={USER}")
-
-    try:
-        # YOU NEED TO CHANGE THIS IF YOU WANT TO USE YOUR SERVER
-        guild = bot.get_guild(539546796473712650)
-        async with aiohttp.ClientSession(headers={"Authorization": f"Bearer {TWITCH_TOKEN}", "Client-Id": f"{TWITCH_CLIENT_ID}"}) as TwitchSession, TwitchSession.get(
-            f"https://api.twitch.tv/helix/streams?{API_Call.getvalue()}"
-        ) as rUserData:
-            API_Call.close()
-            if rUserData.status == 200:
-                AllTwitchdata = await rUserData.json()
-                AllTwitchdata = AllTwitchdata["data"]
-            else:
-                AllTwitchdata = None
-
-        # No one is live
-        if AllTwitchdata == [] and rUserData.status == 200:
-            for USER in bot.Settings["Settings"]["TwitchUser"]:
-                if bot.Settings["Settings"]["TwitchUser"][USER]["live"]:
-                    bot.Settings["Settings"]["TwitchUser"][USER]["live"] = False
-                    _write_json("Settings.json", bot.Settings)
-
-        elif AllTwitchdata is None and rUserData.status != 200:
-            pass
-
-        # Someone is live
-        else:
-            for USER in bot.Settings["Settings"]["TwitchUser"]:
-                # Create Alertgroups if missing
-                twitchuserrole = discord.utils.get(guild.roles, name=f"{USER} Alert")
-                if twitchuserrole is None:
-                    await guild.create_role(name=f"{USER} Alert")
-                    logging.info(f"Created Twitch Alertgroup for {USER} since there was none.")
-                    twitchuserrole = discord.utils.get(guild.roles, name=f"{USER} Alert")
-
-                livestate = bot.Settings["Settings"]["TwitchUser"][f"{USER}"]["live"]
-
-                data = list(filter(lambda x: x["user_login"] == f"{USER}", AllTwitchdata))
-                if data == []:
-                    if livestate:
-                        bot.Settings["Settings"]["TwitchUser"][USER]["live"] = False
-                        _write_json("Settings.json", bot.Settings)
-                    continue
-                data = data[0]
-                custommsg = bot.Settings["Settings"]["TwitchUser"][f"{USER}"]["custom_msg"]
-                if livestate is False and data["user_login"]:
-                    # User went live
-                    game = data["game_name"] if data["game_name"] else "Irgendwas"
-
-                    Displayname = data["user_name"] if data["user_name"] else USER.title()
-                    CurrentTime = int(datetime.datetime.timestamp(datetime.datetime.now()))
-                    embed = discord.Embed(title=f"{data['title']}", colour=discord.Colour(0x772CE8), url=f"https://twitch.tv/{USER}", timestamp=datetime.datetime.now())
-                    embed.set_image(url=f"https://static-cdn.jtvnw.net/previews-ttv/live_user_{USER}-1920x1080.jpg?v={CurrentTime}")
-                    async with aiohttp.ClientSession(headers={"Authorization": f"Bearer {TWITCH_TOKEN}", "Client-Id": f"{TWITCH_CLIENT_ID}"}) as TwitchSession, TwitchSession.get(
-                        f'https://api.twitch.tv/helix/users?login={data["user_login"]}'
-                    ) as ProfileData:
-                        if ProfileData.status == 200:
-                            UserProfile = await ProfileData.json()
-                            ProfilePicData = UserProfile["data"][0]["profile_image_url"]
-                        else:
-                            ProfilePicData = ""
-                    embed.set_author(name=f"{Displayname} ist jetzt live!", icon_url=f"{ProfilePicData}")
-                    embed.set_footer(text="Bizeps_Bot")
-                    NotificationTime = datetime.datetime.now() - timedelta(minutes=60)
-                    if USER == "dota_joker":
-                        DotoChannel = bot.get_channel(539547495567720492)
-                        LastMessages = await DotoChannel.history(after=NotificationTime).flatten()
-                        if LastMessages:
-                            for message in LastMessages:
-                                if message.content.startswith(f"**{Displayname}**"):
-                                    logging.info(f"{Displayname} went live on Twitch! Twitch Twitch Notification NOT sent, because the last Notification is under 60min old!")
-                                    break
-                                await bot.get_channel(539547495567720492).send(content=f"**{Displayname}** ist live mit {game}! {custommsg} {twitchuserrole.mention}", embed=embed)
-                                logging.info(f"{Displayname} went live on Twitch! Twitch Notification sent!")
-                                # DM when I go live, requested by Kernie
-                                KernieDM = await bot.fetch_user(628940079913500703)
-                                await KernieDM.send(content="Doto ist live, Kernovic!", embed=embed)
-                                logging.info(f"{Displayname} went live on Twitch! Twitch Notification sent to Kernie!")
-                                break
-                        else:
-                            await bot.get_channel(539547495567720492).send(content=f"**{Displayname}** ist live mit {game}! {custommsg} {twitchuserrole.mention}", embed=embed)
-                            logging.info(f"{Displayname} went live on Twitch! Twitch Notification sent!")
-                            # DM when I go live, requested by Kernie
-                            KernieDM = await bot.fetch_user(628940079913500703)
-                            await KernieDM.send(content="Doto ist live, Kernovic!", embed=embed)
-                            logging.info(f"{Displayname} went live on Twitch! Twitch Notification sent to Kernie!")
-                    else:
-                        channel = bot.get_channel(703530328836407327)
-                        LastMessages = await channel.history(after=NotificationTime).flatten()
-                        if LastMessages:
-                            for message in LastMessages:
-                                if message.content.startswith(f"**{Displayname}**"):
-                                    logging.info(f"{Displayname} went live on Twitch! Twitch Twitch Notification NOT sent, because the last Notification is under 60min old!")
-                                    break
-                            else:
-                                await channel.send(content=f"**{Displayname}** ist live mit {game}! {custommsg} {twitchuserrole.mention}", embed=embed)
-                                logging.info(f"{Displayname} went live on Twitch! Twitch Twitch Notification sent, because the last Notification is older than 60min!")
-                        else:
-                            await channel.send(content=f"**{Displayname}** ist live mit {game}! {custommsg} {twitchuserrole.mention}", embed=embed)
-                            logging.info(f"{Displayname} went live on Twitch! Twitch Notification sent!")
-
-                    bot.Settings["Settings"]["TwitchUser"][USER]["live"] = True
-                    _write_json("Settings.json", bot.Settings)
-    except IndexError:
-        # Username does not exist or Username is wrong, greetings to Schnabeltier
-        logging.error("ERROR: ", exc_info=True)
-    except json.decoder.JSONDecodeError:
-        logging.error("ERROR: Twitch API not available.", exc_info=True)
-    except KeyError:
-        logging.error("ERROR: Twitch API not available.", exc_info=True)
-    except Exception:
-        logging.error("ERROR: ", exc_info=True)
-
-
-@tasks.loop(seconds=60)
-async def GameReminder():
-    """
-    Prüft jede Minute ob eine Verabredung eingerichtet ist,
-    wenn ja wird in den Channel ein Reminder zur Uhrzeit gepostet.
-    """
-
-    CurrentTime = datetime.datetime.timestamp(datetime.datetime.now())
-    FoundList = []
-    for reminder in bot.Settings["Settings"]["Groups"]:
-        if CurrentTime > bot.Settings["Settings"]["Groups"][f"{reminder}"]["time"]:
-            Remindchannel = bot.get_channel(bot.Settings["Settings"]["Groups"][f"{reminder}"]["id"])
-            ReminderMembers = ", ".join(bot.Settings["Settings"]["Groups"][f"{reminder}"]["members"])
-            ReminderTheme = bot.Settings["Settings"]["Groups"][f"{reminder}"]["theme"]
-            await Remindchannel.send(f" Es geht los mit {ReminderTheme}! Mit dabei sind: {ReminderMembers}")
-            logging.info(f"Meeting in {reminder} started!")
-            FoundList.append(reminder)
-    if FoundList:
-        for reminder in FoundList:
-            bot.Settings["Settings"]["Groups"].pop(f"{reminder}")
-        _write_json("Settings.json", bot.Settings)
-
-
-# this needs a fix discussed in https://github.com/Pycord-Development/pycord/issues/1990
 @tasks.loop(time=datetime.time(hour=17, minute=5, second=0, tzinfo=zoneinfo.ZoneInfo("Europe/Berlin")))
 async def GetFreeEpicGames():
     AllEpicFiles = next(os.walk("epic/"))[2]
@@ -369,9 +188,9 @@ async def GetFreeEpicGames():
                                         EpicImagePath = f"{NumberOfEpicFiles}_epic.jpg"
                                         with open(f"epic/{EpicImagePath}", "wb") as write_file:
                                             write_file.write(EpicImage)
-                                    guild = bot.get_guild(539546796473712650)
+                                    guild = bot.get_guild(GUILD_ID)
                                     EpicRole = discord.utils.get(guild.roles, name="Free Epic Game Alert")
-                                    await bot.get_channel(539553203570606090).send(content=f"{EpicRole.mention}", embed=EpicEmbed)
+                                    await bot.get_channel(MUCHZEPS_CHANNEL_ID).send(content=f"{EpicRole.mention}", embed=EpicEmbed)
                                     logging.info(f"{FreeGame['title']} was added to free Epic Games!")
                                     # Send Epic Games to Subscribers via DM
                                     DMRoleEpic = discord.utils.get(guild.roles, name="DM Alert Epic")
@@ -417,9 +236,9 @@ async def _get_free_steamgames():
                                 SteamEmbed.set_image(url=f"{SteamImageURL}")
                                 SteamEmbed.set_footer(text="Bizeps_Bot")
                                 if NotifiedUsers is False:
-                                    guild = bot.get_guild(539546796473712650)
+                                    guild = bot.get_guild(GUILD_ID)
                                     SteamRole = discord.utils.get(guild.roles, name="Free Steam Game Alert")
-                                    await bot.get_channel(539553203570606090).send(content=f"{SteamRole.mention}", embed=SteamEmbed)
+                                    await bot.get_channel(MUCHZEPS_CHANNEL_ID).send(content=f"{SteamRole.mention}", embed=SteamEmbed)
                                     # Send Steam Games to Subscribers via DM
                                     DMRoleSteam = discord.utils.get(guild.roles, name="DM Alert Steam")
                                     for user in DMRoleSteam.members:
@@ -429,7 +248,7 @@ async def _get_free_steamgames():
                                         logging.info(f"Free Steam Games were sent to subscriber [{user}].")
                                     NotifiedUsers = True
                                 else:
-                                    await bot.get_channel(539553203570606090).send(embed=SteamEmbed)
+                                    await bot.get_channel(MUCHZEPS_CHANNEL_ID).send(embed=SteamEmbed)
                                     # Send Steam Games to Subscribers via DM
                                     DMRoleSteam = discord.utils.get(guild.roles, name="DM Alert Steam")
                                     for user in DMRoleSteam.members:
@@ -473,9 +292,9 @@ async def _get_free_goggames():
                                 GOGEmbed.add_field(name="Besuch mich auf GOG", value=f"{GOGGameURL}", inline=True)
                                 GOGEmbed.set_image(url=f"{GOGImageURL}")
                                 GOGEmbed.set_footer(text="Bizeps_Bot")
-                                guild = bot.get_guild(539546796473712650)
+                                guild = bot.get_guild(GUILD_ID)
                                 GOGRole = discord.utils.get(guild.roles, name="Free GOG Game Alert")
-                                await bot.get_channel(539553203570606090).send(content=f"{GOGRole.mention}", embed=GOGEmbed)
+                                await bot.get_channel(MUCHZEPS_CHANNEL_ID).send(content=f"{GOGRole.mention}", embed=GOGEmbed)
                                 bot.Settings["Settings"]["FreeGOGGames"].append(GOGGameTitle)
                                 _write_json("Settings.json", bot.Settings)
                                 # Send GOG Games to Subscribers via DM
@@ -507,12 +326,6 @@ async def on_ready():
     bot.reload_settings = _load_settings_file
     logging.info(f"Logged in as {bot.user}!")
     logging.info("Bot started up!")
-    if not TwitchLiveCheck.is_running():
-        TwitchLiveCheck.start()
-    if not GameReminder.is_running():
-        GameReminder.start()
-    if not TrashReminder.is_running():
-        TrashReminder.start()
     if not GetFreeEpicGames.is_running():
         GetFreeEpicGames.start()
     if not _get_free_steamgames.is_running():
@@ -551,14 +364,6 @@ if __name__ == "__main__":
     with open("TOKEN.json", "r", encoding="UTF-8") as TOKENFILE:
         TOKENDATA = json.load(TOKENFILE)
         TOKEN = TOKENDATA["DISCORD_TOKEN"]
-        TWITCH_CLIENT_ID = TOKENDATA["TWITCH_CLIENT_ID"]
-        TWITCH_CLIENT_SECRET = TOKENDATA["TWITCH_CLIENT_SECRET"]
-        STREAMLABS_TOKEN = TOKENDATA["STREAMLABS_TOKEN"]
-        if "TWITCH_TOKEN" in TOKENDATA and "TWITCH_TOKEN_EXPIRES" in TOKENDATA and datetime.datetime.timestamp(datetime.datetime.now()) < TOKENDATA["TWITCH_TOKEN_EXPIRES"]:
-            TWITCH_TOKEN = TOKENDATA["TWITCH_TOKEN"]
-            TWITCH_TOKEN_EXPIRES = TOKENDATA["TWITCH_TOKEN_EXPIRES"]
-        else:
-            RequestTwitchToken()
         logging.info("Token successfully loaded.")
 
     # Reading Banned Users before Startup for Cogs
