@@ -383,11 +383,6 @@ async def on_ready() -> None:
     if not _get_free_goggames.is_running():
         _get_free_goggames.start()
 
-    for File in os.listdir("./cogs"):
-        if File.endswith(".py") and f"cogs.{File[:-3]}" not in bot.extensions and not File.startswith("management") and not File.endswith("__.py"):
-            bot.load_extension(f"cogs.{File[:-3]}")
-            logging.info(f"Extension {File[:-3]} loaded.")
-
 
 @bot.event
 async def on_command_error(ctx: commands.Context, error: commands.CommandError)  -> None:
@@ -406,6 +401,10 @@ if __name__ == "__main__":
         TOKEN = TOKENDATA["DISCORD_TOKEN"]
         logging.info("Token successfully loaded.")
 
+    for File in os.listdir("./cogs"):
+        if File.endswith(".py") and f"cogs.{File[:-3]}" not in bot.extensions and not File.startswith("management") and not File.endswith("__.py"):
+            bot.load_extension(f"cogs.{File[:-3]}")
+            logging.info(f"Extension {File[:-3]} loaded.")
     if "cogs.management" not in bot.extensions:
         bot.load_extension("cogs.management")
         logging.info("Extension management loaded.")
