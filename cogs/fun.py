@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 
 import aiohttp
@@ -6,7 +7,7 @@ import discord
 import uwuify
 from discord.ext import commands
 
-from Main import _is_banned, logging
+from Main import _is_banned
 
 
 class Fun(commands.Cog):

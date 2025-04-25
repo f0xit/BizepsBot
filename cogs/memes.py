@@ -1,12 +1,13 @@
+import datetime
+import logging
 import os
 import random
-from typing import Tuple
 
 import aiohttp
 import discord
 from discord.ext import commands
 
-from Main import _is_banned, datetime, logging
+from Main import _is_banned
 
 MAX_DISCORD_FILE_SIZE = 8_000_000
 
@@ -43,7 +44,7 @@ class Memes(commands.Cog):
         random.shuffle(self.Mittwoch)
         logging.info("Refreshed Memelist.")
 
-    async def GetMeme(self, *, Mittwoch: bool = False) -> Tuple[str, str]:
+    async def GetMeme(self, *, Mittwoch: bool = False) -> tuple[str, str]:
         ListOfMemes = self.Memes if not Mittwoch else self.Mittwoch
 
         RandomMeme = ListOfMemes.pop()

@@ -1,10 +1,12 @@
+import logging
 import os
 
 import discord
+import requests
 from discord import Option
 from discord.ext import commands
 
-from Main import _is_banned, _write_json, logging, requests
+from Main import _is_banned, _write_json
 
 
 class Management(commands.Cog):

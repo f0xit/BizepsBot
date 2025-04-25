@@ -1,8 +1,12 @@
+import json
+import logging
 import random
 
+import requests
+from bs4 import BeautifulSoup
 from discord.ext import commands
 
-from Main import BeautifulSoup, _is_banned, json, logging, requests
+from Main import _is_banned
 
 
 class Misc(commands.Cog):

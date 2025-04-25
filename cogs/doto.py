@@ -1,10 +1,12 @@
 import io
+import logging
 import random
 
+import discord
 from discord import Option
 from discord.ext import commands
 
-from Main import _is_banned, _read_json, _write_json, discord, logging
+from Main import _is_banned, _read_json, _write_json
 
 
 def _refresh_dotojokes():
