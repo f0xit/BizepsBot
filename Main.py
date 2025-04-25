@@ -38,6 +38,14 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
+def _read_json(FileName: str) -> dict:
+    with open(f"{FileName}", encoding="utf-8") as JsonRead:
+        return json.load(JsonRead)
+
+
+def _write_json(FileName: str, Content: dict | list) -> None:
+    with open(f"{FileName}", "w", encoding="utf-8") as JsonWrite:
+        json.dump(Content, JsonWrite, indent=4)
 
 class Bot(commands.Bot):
     def __init__(self) -> None:
@@ -58,20 +66,6 @@ class Bot(commands.Bot):
 
 
 bot = Bot()
-
-### Functions ###
-def _read_json(FileName: str) -> dict:
-    with open(f"{FileName}", encoding="utf-8") as JsonRead:
-        return json.load(JsonRead)
-
-
-def _write_json(FileName: str, Content: dict | list) -> None:
-    with open(f"{FileName}", "w", encoding="utf-8") as JsonWrite:
-        json.dump(Content, JsonWrite, indent=4)
-
-
-
-
 
 ### Tasks Section ###
 @tasks.loop(time=datetime.time(hour=17, minute=5, second=0, tzinfo=ZoneInfo("Europe/Berlin")))
