@@ -4,7 +4,7 @@ import discord
 from discord import Option
 from discord.ext import commands
 
-from Main import _get_banned_users, _is_banned, _write_json, logging, requests
+from Main import _is_banned, _write_json, logging, requests
 
 
 class Management(commands.Cog):
@@ -64,7 +64,6 @@ class Management(commands.Cog):
             _write_json("Settings.json", self.bot.Settings)
             await ctx.respond(f"User {UserString} wurde für Befehle gebannt.")
             logging.info(f"User {UserString} was banned from using commands.")
-            _get_banned_users()
         else:
             await ctx.respond("Dieser User ist bereits gebannt.")
 
@@ -79,7 +78,6 @@ class Management(commands.Cog):
             _write_json("Settings.json", self.bot.Settings)
             await ctx.respond(f"Der User {UserString} wurde entbannt.")
             logging.info(f"User {UserString} was unbanned.")
-            _get_banned_users()
         else:
             await ctx.respond(f"Der Benutzer {UserString} ist nicht gebannt.")
 
