@@ -7,20 +7,13 @@ import discord
 import uwuify
 from discord.ext import commands
 
-from Main import _is_banned
-
 
 class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     async def cog_check(self, ctx):
-        return await _is_banned(ctx)
-
-    # Events
-    @commands.Cog.listener()
-    async def on_ready(self):
-        pass
+        return await self.bot.is_banned(ctx)
 
     async def get_waifu_img(self) -> dict[str, str | list] | None:
         waifurl = "https://api.waifu.im/search?is_nsfw=null"

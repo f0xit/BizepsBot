@@ -7,8 +7,6 @@ import aiohttp
 import discord
 from discord.ext import commands
 
-from Main import _is_banned
-
 MAX_DISCORD_FILE_SIZE = 8_000_000
 
 
@@ -29,7 +27,7 @@ class Memes(commands.Cog):
         self.RefreshMemes()
 
     async def cog_check(self, ctx):
-        return await _is_banned(ctx)
+        return await self.bot.is_banned(ctx)
 
     def RefreshMemes(self):
         # Easiest way to walk was with a replace

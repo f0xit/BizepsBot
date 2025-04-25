@@ -6,7 +6,7 @@ import requests
 from discord import Option
 from discord.ext import commands
 
-from Main import _is_banned, _write_json
+from Main import _write_json
 
 
 class Management(commands.Cog):
@@ -14,13 +14,7 @@ class Management(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx):
-        return await _is_banned(ctx)
-
-    # Events
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        pass
+        return await self.bot.is_banned(ctx)
 
     # Commands
     @commands.slash_command(name="reload_settings", description="Lädt alle Einstellungen des Bots neu", brief="Lädt alle Einstellungen des Bots neu")

@@ -6,7 +6,7 @@ import discord
 from discord import Option
 from discord.ext import commands
 
-from Main import _is_banned, _read_json, _write_json
+from Main import _read_json, _write_json
 
 
 def _refresh_dotojokes():
@@ -23,13 +23,7 @@ class DotoJokes(commands.Cog):
         self.DotoJokes = _refresh_dotojokes()
 
     async def cog_check(self, ctx):
-        return await _is_banned(ctx)
-
-    # Events
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        pass
+        return await self.bot.is_banned(ctx)
 
     # Commands
     @commands.slash_command(name="doto", description="Gute Witze, schlechte Witze", brief="Gute Witze, schlechte Witze")

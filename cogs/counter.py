@@ -4,7 +4,7 @@ import random
 import discord
 from discord.ext import commands
 
-from Main import _is_banned, _write_json
+from Main import _write_json
 
 
 class Counter(commands.Cog):
@@ -12,12 +12,7 @@ class Counter(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx):
-        return await _is_banned(ctx)
-
-    # Events
-    @commands.Cog.listener()
-    async def on_ready(self):
-        pass
+        return await self.bot.is_banned(ctx)
 
     # Functions
     async def _inc_counter(self, invoker: discord.ApplicationContext, name: str, incnum: int):

@@ -43,7 +43,7 @@ class Bot(commands.Bot):
     def __init__(self) -> None:
         super().__init__(debug_guilds=[GUILD_ID], command_prefix=("!"), intents=intents)
 
-        self.Settings = {}
+        self.Settings = _read_json("Settings.json")
 
     def reload_settings(self) -> None:
         self.Settings = _read_json("Settings.json")
@@ -52,6 +52,9 @@ class Bot(commands.Bot):
     @property
     def BannedUsers(self) -> list:
         return self.Settings["Settings"]["BannedUsers"]
+
+    async def is_banned(self, ctx: commands.context.Context) -> bool:
+        return str(ctx.author) not in self.BannedUsers
 
 
 bot = Bot()
@@ -67,8 +70,7 @@ def _write_json(FileName: str, Content: dict | list) -> None:
         json.dump(Content, JsonWrite, indent=4)
 
 
-async def _is_banned(ctx: commands.context.Context) -> bool:
-    return str(ctx.author) not in bot.BannedUsers
+
 
 
 ### Tasks Section ###
