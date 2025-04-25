@@ -32,7 +32,7 @@ class Fun(commands.Cog):
         pass
 
     async def get_waifu_img(self) -> dict[str, str | list] | None:
-        waifurl = "https://api.waifu.im/search"
+        waifurl = "https://api.waifu.im/search?is_nsfw=null"
 
         return_dict = {
             "url": "",
