@@ -15,8 +15,11 @@ class Fun(commands.Cog):
     async def cog_check(self, ctx):
         return await self.bot.is_banned(ctx)
 
-    async def get_waifu_img(self) -> dict[str, str | list] | None:
+    async def get_waifu_img(self, *, tag: str = "") -> dict[str, str | list] | None:
         waifurl = "https://api.waifu.im/search?is_nsfw=null"
+
+        if tag:
+            waifurl += f"&included_tags={tag}"
 
         return_dict = {
             "url": "",
@@ -134,8 +137,12 @@ class Fun(commands.Cog):
         await ctx.respond("https://i.redd.it/before-t8-was-announced-harada-said-dont-ask-me-for-shit-v0-e4arzhnywrda1.jpg?width=451&format=pjpg&auto=webp&s=0ec112c803a3a927add3aad4eabafcb83a0bedec")
 
     @commands.slash_command(name="schnabi", description="Er malt gerne!", brief="Er malt gerne!")
-    async def _schnabi(self, ctx: discord.context.ApplicationContext):
-        if (waifu_data := await self.get_waifu_img()) is None:
+    async def _schnabi(
+        self,
+        ctx: discord.context.ApplicationContext,
+        tag: discord.Option(str, "Tag, yo!", required=False, default="")
+    ):
+        if (waifu_data := await self.get_waifu_img(tag=tag)) is None:
             await ctx.respond("Heute keine Waifus für dich, fass mal Gras an :)")
             return
 
