@@ -16,7 +16,7 @@ class Fun(commands.Cog):
         return await self.bot.is_banned(ctx)
 
     async def get_waifu_img(self, *, tag: str = "") -> dict[str, str | list] | None:
-        waifurl = "https://api.waifu.im/images?is_nsfw=null"
+        waifurl = "https://api.waifu.im/images?IsNsfw=All"
 
         if tag:
             waifurl += f"&included_tags={tag}"
