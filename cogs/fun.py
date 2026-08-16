@@ -45,6 +45,8 @@ class Fun(commands.Cog):
             except KeyError:
                 logging.error("Waifu key error: Something is wrong with the JSON file!")
                 return None
+            except IndexError:
+                logging.debug("Waifu artist error.")
 
             return return_dict
 
