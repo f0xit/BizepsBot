@@ -16,7 +16,7 @@ class Fun(commands.Cog):
         return await self.bot.is_banned(ctx)
 
     async def get_waifu_img(self, *, tag: str = "") -> dict[str, str | list] | None:
-        waifurl = "https://api.waifu.im/search?is_nsfw=null"
+        waifurl = "https://api.waifu.im/images?is_nsfw=null"
 
         if tag:
             waifurl += f"&included_tags={tag}"
@@ -34,11 +34,11 @@ class Fun(commands.Cog):
                 return None
 
             try:
-                img_json = (await res.json())["images"][0]
+                img_json = (await res.json())["items"][0]
                 return_dict["url"] = img_json["url"]
-                if (artist := img_json["artist"]) is not None:
-                    return_dict["name"] = artist["name"]
-                    return_dict["urls"] = [page[1] for page in artist.items() if page[0] in ["patreon", "pixiv", "twitter", "deviant_art"] and page[1] is not None]
+                if (artist := img_json["artists"]) is not None:
+                    return_dict["name"] = artist[0]["name"]
+                    return_dict["urls"] = [page[1] for page in artist[0].items() if page[0] in ["patreon", "pixiv", "twitter", "deviant_art"] and page[1] is not None]
             except json.decoder.JSONDecodeError:
                 logging.error("Waifu JSON Decode failed!")
                 return None
