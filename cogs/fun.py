@@ -19,7 +19,7 @@ class Fun(commands.Cog):
         waifurl = "https://api.waifu.im/images?IsNsfw=All"
 
         if tag:
-            waifurl += f"&included_tags={tag}"
+            waifurl += f"&IncludedTags={tag}"
 
         return_dict = {
             "url": "",
