@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import random
@@ -7,6 +8,25 @@ import discord
 import uwuify
 from discord.ext import commands
 
+
+async def get_waifu_tags() -> list[str] | None:
+    tag_url = "https://api.waifu.im/tags"
+
+    async_timeout = aiohttp.ClientTimeout(total=10)
+    
+    async with aiohttp.ClientSession(headers={"Content-Type": "application/json"}, timeout=async_timeout) as aiosession, aiosession.get(tag_url) as res:
+        if res.status != 200:
+            logging.error("Waifu API returned status code != 200!")
+            return None
+
+        return [item["slug"] for item in (await res.json())["items"]]
+
+tags = asyncio.run(get_waifu_tags())
+
+print(tags)
+
+async def tag_autocomplete(_: discord.AutocompleteContext):
+    return tags
 
 class Fun(commands.Cog):
     def __init__(self, bot):
@@ -142,7 +162,7 @@ class Fun(commands.Cog):
     async def _schnabi(
         self,
         ctx: discord.context.ApplicationContext,
-        tag: discord.Option(str, "Tag, yo!", required=False, default="")
+        tag: discord.Option(str, autocomplete=discord.utils.basic_autocomplete(tag_autocomplete), required=False, default="")
     ):
         if (waifu_data := await self.get_waifu_img(tag=tag)) is None:
             await ctx.respond("Heute keine Waifus für dich, fass mal Gras an :)")
