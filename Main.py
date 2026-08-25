@@ -76,7 +76,7 @@ async def get_steam_game(url: str) -> dict[str, str] | None:
             return None
         if ((img := img_div.find("img")) is None):
             return None
-        img_src = quote(str(img["src"]), safe=":/")
+        img_src = quote(str(img["src"]).split("?")[0], safe=":/")
 
         return {
             "title": str(title.text),
